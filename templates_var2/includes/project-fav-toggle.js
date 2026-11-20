@@ -2,23 +2,23 @@
   document.addEventListener("DOMContentLoaded", () => {
     const isFavoritesPage = document.body.dataset.page === "favorites";
 
-    document.querySelectorAll(".project-fav-icon").forEach(button => {
-      button.addEventListener("click", async (e) => {
-        e.preventDefault();
+    document.querySelectorAll(".project-fav-icon").forEach((button) => {
+      button.addEventListener("click", async (event) => {
+        event.preventDefault();
 
         const projectId = button.dataset.projectId;
-        const isFav = button.dataset.fav === "true";
+        const isFavorite = button.dataset.fav === "true";
         const response = await fetch(`/projects/${projectId}/toggle-favorite/`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            "X-CSRFToken": getCookie("csrftoken")
+            "X-CSRFToken": window.getCookie("csrftoken"),
           },
           body: JSON.stringify({})
         });
 
         if (response.ok) {
-          if (isFavoritesPage && isFav) {
+          if (isFavoritesPage && isFavorite) {
             const card = button.closest(".project-card");
             card.remove();
 
@@ -29,7 +29,7 @@
               }
             }
           } else {
-            if (isFav) {
+            if (isFavorite) {
               button.classList.remove("favorite");
               button.classList.add("not-favorite");
               button.dataset.fav = "false";
@@ -46,18 +46,4 @@
     });
   });
 
-  function getCookie(name) {
-    let cookieValue = null;
-    if (document.cookie && document.cookie !== "") {
-      const cookies = document.cookie.split(";");
-      for (let i = 0; i < cookies.length; i++) {
-        const cookie = cookies[i].trim();
-        if (cookie.substring(0, name.length + 1) === name + "=") {
-          cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-          break;
-        }
-      }
-    }
-    return cookieValue;
-  }
 </script>

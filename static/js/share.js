@@ -1,51 +1,49 @@
-// Global share button handler
-// Works for any element with class="share-button" and optional data-url attribute
+document.addEventListener("click", function (event) {
+  const shareButton = event.target.closest(".share-button");
+  if (!shareButton) return;
 
-document.addEventListener("click", function (e) {
-  const btn = e.target.closest(".share-button");
-  if (!btn) return;
+  event.preventDefault();
 
-  e.preventDefault();
-
-  const url = btn.dataset.url
-    ? window.location.origin + btn.dataset.url
+  const shareUrl = shareButton.dataset.url
+    ? window.location.origin + shareButton.dataset.url
     : window.location.href;
 
   navigator.clipboard
-    .writeText(url)
+    .writeText(shareUrl)
     .then(() => {
       if (window.toast) {
-        window.toast("Ссылка скопирована: " + url, { type: 'info' });
+        window.toast(`Ссылка скопирована: ${shareUrl}`, { type: "info" });
       } else {
-        alert("Ссылка скопирована: " + url);
+        alert(`Ссылка скопирована: ${shareUrl}`);
       }
     })
-    .catch((err) => {
-      console.error("Ошибка копирования: ", err);
-      fallbackCopyTextToClipboard(url);
+    .catch((error) => {
+      console.error("Ошибка копирования:", error);
+      fallbackCopyTextToClipboard(shareUrl);
     });
 });
 
-function fallbackCopyTextToClipboard(text) {
+function fallbackCopyTextToClipboard(value) {
   try {
-    const textArea = document.createElement("textarea");
-    textArea.value = text;
-    textArea.setAttribute("readonly", "");
-    textArea.style.position = "fixed";
-    textArea.style.top = "-1000px";
-    document.body.appendChild(textArea);
-    textArea.focus();
-    textArea.select();
-    const successful = document.execCommand("copy");
-    document.body.removeChild(textArea);
-    if (!successful) throw new Error("document.execCommand copy failed");
+    const temporaryInput = document.createElement("textarea");
+    temporaryInput.value = value;
+    temporaryInput.setAttribute("readonly", "");
+    temporaryInput.style.position = "fixed";
+    temporaryInput.style.top = "-1000px";
+    document.body.appendChild(temporaryInput);
+    temporaryInput.focus();
+    temporaryInput.select();
+    const copySucceeded = document.execCommand("copy");
+    document.body.removeChild(temporaryInput);
+
+    if (!copySucceeded) throw new Error("document.execCommand copy failed");
     if (window.toast) {
-      window.toast("Ссылка скопирована: " + text, { type: 'info' });
+      window.toast(`Ссылка скопирована: ${value}`, { type: "info" });
     } else {
-      alert("Ссылка скопирована: " + text);
+      alert(`Ссылка скопирована: ${value}`);
     }
-  } catch (err) {
-    console.error("Ошибка копирования (fallback): ", err);
-    window.prompt("Скопируйте ссылку:", text);
+  } catch (error) {
+    console.error("Ошибка копирования (fallback):", error);
+    window.prompt("Скопируйте ссылку:", value);
   }
 }

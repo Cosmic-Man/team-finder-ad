@@ -1,79 +1,91 @@
-// Project-specific JS (complete project action + toggle participate)
-(function(){
-  document.addEventListener("DOMContentLoaded", function() {
-    const completeBtn = document.getElementById("complete-project-btn");
-    if (completeBtn) {
-      completeBtn.addEventListener("click", function(e) {
-        e.preventDefault();
-        const projectId = completeBtn.dataset.id;
+(function () {
+  document.addEventListener("DOMContentLoaded", function () {
+    const completeButton = document.getElementById("complete-project-btn");
+    if (completeButton) {
+      completeButton.addEventListener("click", function (event) {
+        event.preventDefault();
+        const projectId = completeButton.dataset.id;
         if (!projectId) return;
 
         fetch(`/projects/${projectId}/complete/`, {
           method: "POST",
           headers: {
-            "X-CSRFToken": window.getCookie ? window.getCookie("csrftoken") : "",
-            "Content-Type": "application/json"
+            "X-CSRFToken": window.getCookie
+              ? window.getCookie("csrftoken")
+              : "",
+            "Content-Type": "application/json",
           },
-          body: JSON.stringify({})
+          body: JSON.stringify({}),
         })
-        .then(response => response.json())
-        .then(data => {
-          if (data.status === "ok") {
-            const statusEl = document.querySelector(".project-status-black");
-            if (statusEl) statusEl.textContent = "Закрыт";
-            completeBtn.remove();
-            if (window.toast) window.toast("Проект завершён", { type: 'info' });
-          } else {
-            if (window.toast) window.toast("Ошибка при завершении проекта", { type: 'error' });
-            else alert("Ошибка при завершении проекта");
-          }
-        })
-        .catch(err => {
-          console.error("Ошибка запроса:", err);
-          if (window.toast) window.toast("Ошибка сети", { type: 'error' });
-        });
+          .then((response) => response.json())
+          .then((result) => {
+            if (result.status === "ok") {
+              const projectStatus = document.querySelector(
+                ".project-status-black"
+              );
+              if (projectStatus) projectStatus.textContent = "Закрыт";
+              completeButton.remove();
+              if (window.toast) {
+                window.toast("Проект завершён", { type: "info" });
+              }
+            } else if (window.toast) {
+              window.toast("Ошибка при завершении проекта", { type: "error" });
+            } else {
+              alert("Ошибка при завершении проекта");
+            }
+          })
+          .catch((error) => {
+            console.error("Ошибка запроса:", error);
+            if (window.toast) window.toast("Ошибка сети", { type: "error" });
+          });
       });
     }
 
-    const participateBtn = document.getElementById("participate-btn");
+    const participateButton = document.getElementById("participate-btn");
     const participantsList = document.getElementById("participants-list");
     const participantsCount = document.getElementById("participants-count");
-    if (participateBtn && participantsList && participantsCount) {
-      const userId = participateBtn.dataset.userId || null;
-      const projectId = participateBtn.dataset.project;
-      const userName = participateBtn.dataset.userName || "";
-      const userAvatar = participateBtn.dataset.userAvatar || "";
+    if (!participateButton || !participantsList || !participantsCount) return;
 
-      participateBtn.addEventListener("click", function(e) {
-        e.preventDefault();
-        if (!projectId) return;
+    const userId = participateButton.dataset.userId || null;
+    const projectId = participateButton.dataset.project;
+    const userName = participateButton.dataset.userName || "";
+    const userAvatar = participateButton.dataset.userAvatar || "";
 
-        fetch(`/projects/${projectId}/toggle-participate/`, {
-          method: "POST",
-          headers: {
-            "X-CSRFToken": window.getCookie ? window.getCookie("csrftoken") : "",
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({})
-        })
-        .then(resp => resp.json())
-        .then(data => {
-          if (data.status !== "ok") {
-            if (window.toast) window.toast("Ошибка при изменении участия", { type: 'error' });
-            else alert("Ошибка при изменении участия");
+    participateButton.addEventListener("click", function (event) {
+      event.preventDefault();
+      if (!projectId) return;
+
+      fetch(`/projects/${projectId}/toggle-participate/`, {
+        method: "POST",
+        headers: {
+          "X-CSRFToken": window.getCookie
+            ? window.getCookie("csrftoken")
+            : "",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({}),
+      })
+        .then((response) => response.json())
+        .then((result) => {
+          if (result.status !== "ok") {
+            if (window.toast) {
+              window.toast("Ошибка при изменении участия", { type: "error" });
+            } else {
+              alert("Ошибка при изменении участия");
+            }
             return;
           }
 
-          if (data.participant) {
-            participateBtn.textContent = "Отказаться от участия";
+          if (result.participant) {
+            participateButton.textContent = "Отказаться от участия";
 
-            const noParticipants = document.getElementById("no-participants");
-            if (noParticipants) noParticipants.remove();
+            const emptyState = document.getElementById("no-participants");
+            if (emptyState) emptyState.remove();
 
-            const a = document.createElement("a");
-            a.href = `/users/${userId}`;
-            a.id = `participant-${userId}`;
-            a.innerHTML = `
+            const participantLink = document.createElement("a");
+            participantLink.href = `/users/${userId}`;
+            participantLink.id = `participant-${userId}`;
+            participantLink.innerHTML = `
               <div class="participant-item">
                 <img src="${userAvatar}" alt="Аватар" class="participant-avatar">
                 <div class="participant-info">
@@ -82,32 +94,33 @@
                 </div>
               </div>
             `;
-            participantsList.appendChild(a);
+            participantsList.appendChild(participantLink);
+            participantsCount.textContent =
+              Number.parseInt(participantsCount.textContent, 10) + 1;
+            return;
+          }
 
-            participantsCount.textContent = parseInt(participantsCount.textContent) + 1;
+          participateButton.textContent = "Участвовать";
+          const participantElement = document.getElementById(
+            `participant-${userId}`
+          );
+          if (participantElement) participantElement.remove();
 
-          } else {
-            participateBtn.textContent = "Участвовать";
+          const updatedCount =
+            Number.parseInt(participantsCount.textContent, 10) - 1;
+          participantsCount.textContent = updatedCount;
 
-            const el = document.getElementById(`participant-${userId}`);
-            if (el) el.remove();
-
-            const newCount = parseInt(participantsCount.textContent) - 1;
-            participantsCount.textContent = newCount;
-
-            if (newCount === 0) {
-              const p = document.createElement("p");
-              p.id = "no-participants";
-              p.textContent = "Пока нет участников";
-              participantsList.appendChild(p);
-            }
+          if (updatedCount === 0) {
+            const emptyState = document.createElement("p");
+            emptyState.id = "no-participants";
+            emptyState.textContent = "Пока нет участников";
+            participantsList.appendChild(emptyState);
           }
         })
-        .catch(err => {
-          console.error("Ошибка запроса:", err);
-          if (window.toast) window.toast("Ошибка сети", { type: 'error' });
+        .catch((error) => {
+          console.error("Ошибка запроса:", error);
+          if (window.toast) window.toast("Ошибка сети", { type: "error" });
         });
-      });
-    }
+    });
   });
 })();

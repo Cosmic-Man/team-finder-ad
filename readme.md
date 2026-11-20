@@ -1,107 +1,124 @@
-# Первоначальная настройка проекта TeamFinder
+# TeamFinder
 
-## 1. Виртуальное окружение
+## Требования
 
-Перед началом работы необходимо создать и активировать виртуальное окружение Python.  
+- Python 3.10 или новее
+- Docker Desktop с Docker Compose
 
+## Установка
 
-1. **Создайте виртуальное окружение (в папке проекта):**
-   ```bash
-   python3 -m venv venv
+1. Клонируйте репозиторий:
+
+   ```powershell
+   git clone https://github.com/Cosmic-Man/team-finder-ad.git
    ```
 
-   После этого появится папка `venv`, где будут храниться зависимости проекта.
+2. Перейдите в папку проекта:
 
-2. **Активируйте окружение:**
-
-    - **Windows (PowerShell):**
-      ```bash
-      venv\Scripts\Activate.ps1
-      ```
-    - **Windows (cmd):**
-      ```bash
-      venv\Scripts\activate
-      ```
-    - **Linux/Mac:**
-      ```bash
-      source venv/bin/activate
-      ```
-
-3. **Установите зависимости из `requirements.txt`:**
-   ```bash
-   pip install -r requirements.txt
+   ```powershell
+   cd team-finder-ad
    ```
 
-   После установки в окружении будут доступны все нужные библиотеки Django-проекта.
+Создайте виртуальное окружение, активируйте его и установите зависимости:
 
-## 2. Создание `.env`
-
-Файл `.env` содержит конфиденциальные настройки проекта — ключ Django, параметры БД и другие переменные.  
-
-Особое внимание обратите на строчку `TASK_VERSION=`. 
-Добавьте число, которое соответствует вашему варианту задания. 
-Этот параметр определяет, какие шаблоны использовать для сайта (из папок `templates_var1`/`templates_var2`/`templates_var3`).
-Лишние две папки не из вашего варианта можно удалить.
-
-В репозитории есть пример `.env_example`, который нужно скопировать и заполнить:
-
-```bash
-cp .env_example .env
+```powershell
+python -m venv venv
+.\venv\Scripts\Activate.ps1
+pip install -r requirements.txt
 ```
 
-После этого откройте `.env` и укажите свои значения.  
+Скопируйте файл с примером настроек:
 
-| Переменная            | Назначение                                                                                                                                                 |
-|-----------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| **DJANGO_SECRET_KEY** | Секретный ключ Django, используемый для подписи cookie и токенов. Можно сгенерировать при помощи `get_random_secret_key` из `django.core.management.utils` |
-| **DJANGO_DEBUG**      | Режим отладки. Установите `True` во время разработки.                                                                                                      |
-| **POSTGRES_DB**       | Имя базы данных PostgreSQL, которую будет использовать Django.                                                                                             |
-| **POSTGRES_USER**     | Имя пользователя PostgreSQL.                                                                                                                               |
-| **POSTGRES_PASSWORD** | Пароль пользователя PostgreSQL.                                                                                                                            |
-| **POSTGRES_HOST**     | Адрес сервера БД. В случае локальной разработки localhost.                                                                                                 |
-| **POSTGRES_PORT**     | Порт подключения к БД (по умолчанию `5432`).                                                                                                               |
-| **TASK_VERSION**      | Номер варианта вашего задания. Используется для определения набора HTML-шаблонов.                                                                          |
+```powershell
+Copy-Item .env_example .env
+```
 
----
+В Linux или macOS используйте `cp .env_example .env`. Перед запуском укажите
+значения в `.env`:
 
-## 3. Запуск PostgreSQL
+| Переменная | Назначение |
+| --- | --- |
+| `DJANGO_SECRET_KEY` | Секретный ключ Django. Используйте случайное приватное значение. |
+| `DJANGO_DEBUG` | Включает режим отладки при локальной разработке. |
+| `POSTGRES_DB` | Имя базы данных. |
+| `POSTGRES_USER` | Пользователь базы данных. |
+| `POSTGRES_PASSWORD` | Пароль пользователя базы данных. |
+| `POSTGRES_HOST` | Хост базы данных; при локальном запуске Django укажите `localhost`. |
+| `POSTGRES_PORT` | Порт базы данных; по умолчанию `5432`. |
 
-Для работы приложения **TeamFinder** используется база данных **PostgreSQL**.
-По условию задания база данных должна запускаться в контейнере Docker.
+Сгенерировать ключ Django можно командой:
 
-В проекте уже есть пример файла `docker-compose.yml`. 
-Используйте готовый или измените под свои нужды, а дальше запускайте:
+```powershell
+python -c "from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())"
+```
 
-```bash
+## Запуск базы и приложения
+
+Запустите PostgreSQL:
+
+```powershell
 docker compose up -d
 ```
 
-`-d` значит `detach`, то есть контейнер продолжит работать в фоне. Чтобы его остановить, надо будет ввести
+Примените миграции. Команда загрузки демонстрационных профилей и проектов
+необязательна:
 
-```bash
-docker compose down
+```powershell
+python manage.py migrate
+python manage.py load_test_data
 ```
 
-Если возникает ошибка "permission denied while trying to connect to the Docker daemon socket", то может потребоваться добавить `sudo` перед командой.
+Запустите сервер разработки:
 
----
-
-После этого база данных будет доступна по адресу `localhost:5432`.  
-Нужно будет использовать эти же параметры в файле `.env`.
-
-> Если на компьютере уже развёрнут сервер БД на порте 5432, и вы не хотите создавать БД для этого проекта на этом сервере, целесообразнее будет изменить порт на нестандартный.
-> Нестандартный порт нужно будет поставить слева в паре портов в docker-compose (`"5433":"5432"`) и в .env.
-
-## 4. Запуск Django
-
-После заполнения `.env` и настройки базы данных можно запустить сервер разработки:
-
-```bash
+```powershell
 python manage.py runserver
 ```
 
-Теперь проект доступен по адресу [http://localhost:8000](http://localhost:8000). 
-Если видите ракету с надписью "The install worked successfully! Congratulations!", то запуск прошёл успешно, Django работает!
-Осталось всего ничего: реализовать весь проект!
+Откройте [TeamFinder](http://127.0.0.1:8000). Команда `load_test_data` создаёт
+семь тестовых пользователей с навыками и проектами. Повторный запуск команды не
+создаёт дубликаты. Пароль всех тестовых пользователей — `testpass123`.
 
-Если в процессе разработки способ развертывания приложения поменяется, обновите `readme.md` с пометкой ревьюеру, как запускать и проверять приложение.
+| Автор (ФИО) | Контакт-ссылка |
+| --- | --- |
+| Иван Петров | [ivan@example.com](mailto:ivan@example.com) |
+| Анна Смирнова | [anna@example.com](mailto:anna@example.com) |
+| Олег Кузнецов | [oleg@example.com](mailto:oleg@example.com) |
+| Мария Волкова | [maria@example.com](mailto:maria@example.com) |
+| Алексей Соколов | [alexey@example.com](mailto:alexey@example.com) |
+| Елена Морозова | [elena@example.com](mailto:elena@example.com) |
+| Тимур Ахметов | [timur@example.com](mailto:timur@example.com) |
+
+Создать учётную запись администратора можно так:
+
+```powershell
+python manage.py createsuperuser
+```
+
+## Структура проекта
+
+- `team_finder/` — настройки Django и корневая конфигурация URL.
+- `users/` — аккаунты, профили и навыки.
+- `projects/` — проекты и команда демонстрационных данных.
+- `templates_var2/` — HTML-шаблоны этого варианта.
+- `static/` — стили, JavaScript и статические изображения.
+
+Пространства имён Django-приложений — `users` и `projects`. Например, ссылки на
+маршруты записываются как `users:detail` и `projects:list`.
+
+## Проверка конфигурации
+
+Проверить настройки Django и соответствие моделей миграциям можно командами:
+
+```powershell
+python manage.py check
+python manage.py makemigrations --check --dry-run
+```
+
+Для проверки стиля Python установите `flake8` и запустите его:
+
+```powershell
+pip install flake8
+flake8
+```
+
+Автор: [Cosmic-Man](https://github.com/Cosmic-Man)
